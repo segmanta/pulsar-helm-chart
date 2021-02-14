@@ -234,6 +234,17 @@ spec:
             name: broker-token
             readOnly: true
           {{- end }}
+          {{- if eq .Values.auth.authentication.provider "oauth2" }}
+          - mountPath: "/pulsar/keys"
+            name: token-keys
+            readOnly: true
+          - mountPath: "/pulsar/tokens"
+            name: broker-token
+            readOnly: true
+          - mountPath: "/pulsar/oauth2"
+            name: oauth2-public-key
+            readOnly: true
+          {{- end }}
           {{- end }}
           {{- include "pulsar.broker.certs.volumeMounts" . | nindent 10 }}
       {{- if and .Values.rbac.enabled .Values.rbac.psp }}
@@ -265,6 +276,26 @@ spec:
           items:
             - key: TOKEN
               path: broker/token
+      {{- end}}
+      {{- if eq .Values.auth.authentication.provider "oauth2" }}
+      - name: token-keys
+        secret:
+          secretName: {{ .Values.auth.authentication.oauth2.configFileSecretName }}
+          items:
+            - key: OAUTH2_JSON
+              path: broker/oauth2/oauth2.json
+      - name: broker-token
+        secret:
+          secretName: {{ .Values.auth.authentication.oauth2.brokerClientAuthenticationParametersSecretName }}
+          items:
+            - key: AUTHPARAMETERS
+              path: broker/token
+      - name: oauth2-public-key
+        secret:
+          secretName: {{ .Values.auth.authentication.oauth2.brokerClientAuthenticationParametersSecretName }}
+          items:
+            - key: OAUTH2_PUBLIC_KEY
+              path: broker/oauth2/public.key
       {{- end}}
       {{- end}}
       {{- include "pulsar.broker.certs.volumes" . | nindent 6 }}
